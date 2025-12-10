@@ -35,8 +35,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       user: { id: user.id, name: user.name, email: user.email }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }
