@@ -1,0 +1,103 @@
+import fs from 'fs';
+import path from 'path';
+import pg from 'pg';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const DATABASE_URL = "postgresql://neondb_owner:npg_mMLSva9YQ5Eu@ep-blue-leaf-ahtstx2d-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+const CSV_PATH = path.join(__dirname, '../bulkUpdate/trans-7402.csv');
+
+const { Pool } = pg;
+
+const importTransactions = async () => {
+    const pool = new Pool({
+        connectionString: DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+    });
+
+    try {
+        const client = await pool.connect();
+
+        // Read CSV
+        console.log(`Reading CSV from ${CSV_PATH}...`);
+        const content = fs.readFileSync(CSV_PATH, 'utf-8');
+        const lines = content.split('\n').filter(l => l.trim());
+        const headers = lines[0].split(',');
+
+        console.log(`Found ${lines.length - 1} transactions.`);
+
+        let imported = 0;
+        let skipped = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+            const row = lines[i].split(',');
+            if (row.length < headers.length) continue;
+
+            const [
+                csvId, userId, dateStr, amountStr, type,
+                fromWalletId, toWalletId, subId, desc, vatStr, createdAt
+            ] = row;
+
+            // 1. Parse Date
+            const parseDate = (d: string) => {
+                if (!d) return new Date().toISOString();
+                // Expect 06-01-25 0:00 or ISO
+                if (d.includes('T')) return d; // already ISO-ish possibly?
+
+                const [datePart, timePart] = d.split(' ');
+                const parts = datePart?.split('-') || [];
+                if (parts.length !== 3) return new Date().toISOString();
+                const [day, month, year] = parts;
+                const fullYear = year.length === 2 ? `20${year}` : year;
+                return `${fullYear}-${month}-${day} ${timePart || '00:00:00'}`;
+            };
+            const finalDate = parseDate(dateStr);
+
+            // 2. Parse Amount
+            const amt = parseFloat(amountStr);
+            const finalAmount = isNaN(amt) ? 0 : Math.abs(amt);
+
+            // 3. Deduplication Check
+            const existing = await client.query(
+                `SELECT id FROM transactions 
+                 WHERE amount = $1 AND date = $2 AND type = $3 
+                 AND (from_wallet_id = $4 OR ($4 IS NULL AND from_wallet_id IS NULL))
+                 AND (to_wallet_id = $5 OR ($5 IS NULL AND to_wallet_id IS NULL))
+                 LIMIT 1`,
+                [finalAmount, finalDate, type, fromWalletId || null, toWalletId || null]
+            );
+
+            if (existing.rows.length > 0) {
+                console.log(`Skipping existing tx (Row ${i}): ${desc} - ${finalAmount}`);
+                skipped++;
+                continue;
+            }
+
+            // 4. Insert (Let DB generate ID)
+            await client.query(
+                `INSERT INTO transactions (
+                    user_id, date, amount, type, 
+                    from_wallet_id, to_wallet_id, subscription_id, 
+                    description, vat_amount
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                [
+                    userId, finalDate, finalAmount, type,
+                    fromWalletId || null, toWalletId || null, subId || null,
+                    desc || '', vatStr ? parseFloat(vatStr) : 0
+                ]
+            );
+            imported++;
+        }
+
+        console.log(`Import Complete. Imported: ${imported}, Skipped: ${skipped}`);
+        client.release();
+    } catch (e) {
+        console.error("Error:", e);
+    } finally {
+        await pool.end();
+    }
+};
+
+importTransactions();
