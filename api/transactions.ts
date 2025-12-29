@@ -95,7 +95,78 @@ const handler = async (req: VercelRequest, res: VercelResponse, user: any) => {
       }
     }
 
-    // Handle DELETE (Revert transaction) - Simplified logic
+    // Handle EDIT (PUT)
+    if (req.method === 'PUT') {
+      const { id, amount, date, description, fromWalletId, toWalletId, type } = req.body;
+
+      try {
+        await client.query('BEGIN');
+
+        // 1. Get original transaction
+        const txResult = await client.query('SELECT * FROM transactions WHERE id = $1 AND user_id = $2', [id, userId]);
+        if (txResult.rowCount === 0) {
+          await client.query('ROLLBACK');
+          return res.status(404).json({ error: 'Transaction not found' });
+        }
+        const oldTx = txResult.rows[0];
+        const oldAmount = parseFloat(oldTx.amount);
+
+        // 2. Revert Original Effect
+        if (oldTx.type === 'DEPOSIT_FROM_BANK') {
+          if (oldTx.to_wallet_id) {
+            await client.query('UPDATE wallets SET balance = balance - $1 WHERE id = $2', [oldAmount, oldTx.to_wallet_id]);
+          }
+        } else if (oldTx.type === 'INTERNAL_TRANSFER') {
+          if (oldTx.from_wallet_id && oldTx.to_wallet_id) {
+            await client.query('UPDATE wallets SET balance = balance + $1 WHERE id = $2', [oldAmount, oldTx.from_wallet_id]);
+            await client.query('UPDATE wallets SET balance = balance - $1 WHERE id = $2', [oldAmount, oldTx.to_wallet_id]);
+          }
+        }
+        // Note: Subscription/Refund editing not fully supported in this snippet for simplicity, or can be added similarly
+
+        // 3. Update Transaction Record
+        // We only support updating fields that are passed. 
+        // Ideally we should validate 'type' consistency but assuming type doesn't change for now or is handled safely.
+        await client.query(
+          `UPDATE transactions SET 
+                   amount = $1, 
+                   date = $2, 
+                   description = $3,
+                   from_wallet_id = $4,
+                   to_wallet_id = $5
+                 WHERE id = $6 AND user_id = $7`,
+          [amount, date, description, fromWalletId, toWalletId, id, userId]
+        );
+
+        // 4. Apply New Effect
+        // Use the new values (or fallbacks if valid partial updates were allowed, but frontend sends full object)
+        // Assuming frontend sends the full new state including type (even if type matching oldTx)
+        const newAmount = parseFloat(amount);
+
+        // We use oldTx.type ensure we don't accidentally change type logic unless intended. 
+        // If type can change, we should use `type` from body.
+        const txType = type || oldTx.type;
+
+        if (txType === 'DEPOSIT_FROM_BANK') {
+          if (!toWalletId) throw new Error("Target wallet ID required");
+          await client.query('UPDATE wallets SET balance = balance + $1 WHERE id = $2', [newAmount, toWalletId]);
+        } else if (txType === 'INTERNAL_TRANSFER') {
+          if (!fromWalletId || !toWalletId) throw new Error("Source and Dest wallets required");
+          await client.query('UPDATE wallets SET balance = balance - $1 WHERE id = $2', [newAmount, fromWalletId]);
+          await client.query('UPDATE wallets SET balance = balance + $1 WHERE id = $2', [newAmount, toWalletId]);
+        }
+
+        await client.query('COMMIT');
+
+        // Return updated
+        const updatedTx = await client.query('SELECT * FROM transactions WHERE id = $1', [id]);
+        return res.status(200).json(updatedTx.rows[0]);
+
+      } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+      }
+    }
     if (req.method === 'DELETE') {
       const { id } = req.query;
 

@@ -167,8 +167,10 @@ function AppContent() {
   };
 
   const editTransaction = async (txId: string, updates: any) => {
-    // Not implementing full transaction edit yet as it's complex to revert/apply on backend
-    alert("Transaction editing is temporarily disabled in this version.");
+    try {
+      await api.put('/transactions', { id: txId, ...updates });
+      loadData();
+    } catch (e) { console.error(e); alert('Failed to update transaction'); }
   };
 
   const deleteTransaction = async (txId: string) => {
