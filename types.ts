@@ -62,10 +62,10 @@ export interface Subscription {
   userCount: number;
   notes?: string;
   status: EntityStatus;
-  
+
   // Department Allocation Logic (For Dashboard/Ownership)
   allocationType: AllocationType;
-  departments: DepartmentSplit[]; 
+  departments: DepartmentSplit[];
 
   // Accounting Allocation Logic (For Qoyod/Entries)
   accountAllocationType: AllocationType;
@@ -86,7 +86,7 @@ export enum TransactionType {
 }
 
 export interface Transaction {
-  id: string;
+  id: number;
   date: string;
   amount: number;
   type: TransactionType;

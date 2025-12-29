@@ -166,14 +166,14 @@ function AppContent() {
     } catch (e) { console.error(e); alert('Transfer failed'); }
   };
 
-  const editTransaction = async (txId: string, updates: any) => {
+  const editTransaction = async (txId: number, updates: any) => {
     try {
       await api.put('/transactions', { id: txId, ...updates });
       loadData();
     } catch (e) { console.error(e); alert('Failed to update transaction'); }
   };
 
-  const deleteTransaction = async (txId: string) => {
+  const deleteTransaction = async (txId: number) => {
     if (!confirm('Revert this transaction?')) return;
     try {
       await api.delete(`/transactions?id=${txId}`);

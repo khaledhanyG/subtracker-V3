@@ -9,8 +9,8 @@ interface WalletsProps {
   onDeleteWallet: (id: string) => void;
   onTransfer: (fromId: string, toId: string, amount: number) => void;
   onFundMain: (amount: number) => void;
-  onEditTransaction: (id: string, updates: Partial<Transaction>) => void;
-  onDeleteTransaction: (id: string) => void;
+  onEditTransaction: (id: number, updates: Partial<Transaction>) => void;
+  onDeleteTransaction: (id: number) => void;
 }
 
 export const Wallets: React.FC<WalletsProps> = ({ state, onAddWallet, onUpdateWallet, onDeleteWallet, onTransfer, onFundMain, onEditTransaction, onDeleteTransaction }) => {
@@ -21,7 +21,7 @@ export const Wallets: React.FC<WalletsProps> = ({ state, onAddWallet, onUpdateWa
 
   // Delete Modal State
   const [deleteWalletId, setDeleteWalletId] = useState<string | null>(null);
-  const [deleteTxId, setDeleteTxId] = useState<string | null>(null); // For transaction deletion
+  const [deleteTxId, setDeleteTxId] = useState<number | null>(null); // For transaction deletion
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   // Transfer Form State
@@ -45,7 +45,7 @@ export const Wallets: React.FC<WalletsProps> = ({ state, onAddWallet, onUpdateWa
   const [fundAmount, setFundAmount] = useState('');
 
   // Edit Transaction State
-  const [editingTxId, setEditingTxId] = useState<string | null>(null);
+  const [editingTxId, setEditingTxId] = useState<number | null>(null);
   const [editTxData, setEditTxData] = useState<{
     amount: string;
     date: string;
@@ -125,7 +125,7 @@ export const Wallets: React.FC<WalletsProps> = ({ state, onAddWallet, onUpdateWa
     setDeleteConfirmText('');
   };
 
-  const promptDeleteTx = (id: string) => {
+  const promptDeleteTx = (id: number) => {
     setDeleteTxId(id);
     setDeleteConfirmText('');
   };
