@@ -7,7 +7,7 @@ interface WalletsProps {
   onAddWallet: (wallet: Wallet) => void;
   onUpdateWallet: (id: string, updates: Partial<Wallet>) => void;
   onDeleteWallet: (id: string) => void;
-  onTransfer: (fromId: string, toId: string, amount: number) => void;
+  onTransfer: (fromId: string, toId: string, amount: number, date: string) => void;
   onFundMain: (amount: number) => void;
   onEditTransaction: (id: number, updates: Partial<Transaction>) => void;
   onDeleteTransaction: (id: number) => void;
@@ -28,6 +28,7 @@ export const Wallets: React.FC<WalletsProps> = ({ state, onAddWallet, onUpdateWa
   const [transferAmount, setTransferAmount] = useState('');
   const [transferFromId, setTransferFromId] = useState('');
   const [transferToId, setTransferToId] = useState('');
+  const [transferDate, setTransferDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Create Card Form State
   const [newCardName, setNewCardName] = useState('');
@@ -146,10 +147,11 @@ export const Wallets: React.FC<WalletsProps> = ({ state, onAddWallet, onUpdateWa
   const handleTransfer = (e: React.FormEvent) => {
     e.preventDefault();
     if (transferFromId && transferToId) {
-      onTransfer(transferFromId, transferToId, parseFloat(transferAmount));
+      onTransfer(transferFromId, transferToId, parseFloat(transferAmount), new Date(transferDate).toISOString());
       setTransferAmount('');
       setTransferToId('');
       setTransferFromId('');
+      setTransferDate(new Date().toISOString().split('T')[0]);
       setShowTransfer(false);
     }
   };
@@ -365,6 +367,16 @@ export const Wallets: React.FC<WalletsProps> = ({ state, onAddWallet, onUpdateWa
                 onChange={e => setTransferAmount(e.target.value)}
                 className="w-full border border-indigo-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 placeholder="0.00"
+              />
+            </div>
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-medium text-indigo-800 mb-1">Date</label>
+              <input
+                type="date"
+                required
+                value={transferDate}
+                onChange={e => setTransferDate(e.target.value)}
+                className="w-full border border-indigo-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
             <div className="flex gap-2">

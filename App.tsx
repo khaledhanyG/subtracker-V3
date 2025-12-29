@@ -152,14 +152,14 @@ function AppContent() {
     }
   };
 
-  const transferFunds = async (fromId: string, toId: string, amount: number) => {
+  const transferFunds = async (fromId: string, toId: string, amount: number, date: string) => {
     try {
       await api.post('/transactions', {
         type: 'INTERNAL_TRANSFER',
         amount,
         fromWalletId: fromId,
         toWalletId: toId,
-        date: new Date().toISOString(),
+        date: date,
         description: 'Internal Transfer'
       });
       loadData();
