@@ -75,8 +75,8 @@ function AppContent() {
 
       setState({
         wallets: (res.data.wallets || []).map((w: any) => fixNumbers(w, ['balance'])),
-        subscriptions: (res.data.subscriptions || []).map((s: any) => fixNumbers(s, ['baseAmount', 'lastPaymentAmount'])),
-        transactions: (res.data.transactions || []).map((t: any) => fixNumbers(t, ['amount', 'vatAmount'])),
+        subscriptions: (res.data.subscriptions || []).map((s: any) => fixNumbers(s, ['id', 'baseAmount', 'lastPaymentAmount'])),
+        transactions: (res.data.transactions || []).map((t: any) => fixNumbers(t, ['amount', 'vatAmount', 'subscriptionId'])),
         departments: res.data.departments || [],
         accounts: res.data.accounts || []
       });
@@ -188,14 +188,14 @@ function AppContent() {
     } catch (e) { console.error(e); alert('Failed to add subscription'); }
   };
 
-  const updateSubscription = async (id: string, updates: Partial<Subscription>) => {
+  const updateSubscription = async (id: number, updates: Partial<Subscription>) => {
     try {
       await api.put('/subscriptions', { id, ...updates });
       loadData();
     } catch (e) { console.error(e); alert('Failed to update subscription'); }
   };
 
-  const deleteSubscription = async (id: string) => {
+  const deleteSubscription = async (id: number) => {
     if (!confirm('Are you sure?')) return;
     try {
       await api.delete(`/subscriptions?id=${id}`);
@@ -203,7 +203,7 @@ function AppContent() {
     } catch (e) { console.error(e); alert('Failed to delete subscription'); }
   };
 
-  const recordPayment = async (subscriptionId: string, walletId: string, amount: number, date: string, nextRenewalDate: string, vatAmount?: number) => {
+  const recordPayment = async (subscriptionId: number, walletId: string, amount: number, date: string, nextRenewalDate: string, vatAmount?: number) => {
     try {
       await api.post('/transactions', {
         type: 'SUBSCRIPTION_PAYMENT',
@@ -219,7 +219,7 @@ function AppContent() {
     } catch (e) { console.error(e); alert('Payment failed'); }
   };
 
-  const recordRefund = async (subscriptionId: string, walletId: string, amount: number, date: string) => {
+  const recordRefund = async (subscriptionId: number, walletId: string, amount: number, date: string) => {
     try {
       await api.post('/transactions', {
         type: 'REFUND',

@@ -6,12 +6,12 @@ import { Plus, AlertTriangle, Search, Trash2, Receipt, Users, ArrowRight, Histor
 interface SubscriptionsProps {
   state: AppState;
   onAddSubscription: (sub: Omit<Subscription, 'id'>) => void;
-  onDeleteSubscription: (id: string) => void;
-  onRecordPayment: (subscriptionId: string, walletId: string, amount: number, date: string, nextRenewalDate: string, vatAmount?: number) => void;
-  onUpdateSubscription: (id: string, updates: Partial<Subscription>) => void;
+  onDeleteSubscription: (id: number) => void;
+  onRecordPayment: (subscriptionId: number, walletId: string, amount: number, date: string, nextRenewalDate: string, vatAmount?: number) => void;
+  onUpdateSubscription: (id: number, updates: Partial<Subscription>) => void;
   onEditTransaction: (id: number, updates: Partial<Transaction>) => void;
   onDeleteTransaction: (id: number) => void;
-  onRecordRefund: (subscriptionId: string, walletId: string, amount: number, date: string) => void;
+  onRecordRefund: (subscriptionId: number, walletId: string, amount: number, date: string) => void;
 }
 
 export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscription, onDeleteSubscription, onRecordPayment, onUpdateSubscription, onEditTransaction, onDeleteTransaction, onRecordRefund }) => {
@@ -31,7 +31,7 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
   // --- History Filters & Accounting ---
   const [filterDateStart, setFilterDateStart] = useState('');
   const [filterDateEnd, setFilterDateEnd] = useState('');
-  const [filterServiceId, setFilterServiceId] = useState('');
+  const [filterServiceId, setFilterServiceId] = useState<number | ''>('');
   const [showAccountingModal, setShowAccountingModal] = useState(false);
 
   // --- Edit History State ---
@@ -46,7 +46,7 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
 
   // --- Add/Edit Subscription Form State ---
   const [subForm, setSubForm] = useState<{
-    id?: string;
+    id?: number;
     name: string;
     baseAmount: string;
     billingCycle: BillingCycle;
@@ -310,7 +310,7 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
         amount: parseFloat(editTxData.amount),
         date: new Date(editTxData.date).toISOString(),
         fromWalletId: editTxData.walletId,
-        subscriptionId: editTxData.subId
+        subscriptionId: editTxData.subId ? parseInt(editTxData.subId) : undefined
       });
       setEditingTxId(null);
     }
@@ -323,6 +323,12 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
     const vatVal = payForm.isTaxable ? parseFloat(payForm.vatAmount) : 0;
     const totalVal = baseVal + vatVal;
 
+    const subIdNum = parseInt(payForm.subscriptionId);
+    if (isNaN(subIdNum)) {
+      alert("Please select a valid subscription service.");
+      return;
+    }
+
     const wallet = state.wallets.find(w => w.id === payForm.walletId);
 
     // Check for insufficient funds
@@ -331,12 +337,13 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
       return;
     }
 
-    onRecordPayment(payForm.subscriptionId, payForm.walletId, totalVal, payForm.date, payForm.nextRenewalDate, vatVal > 0 ? vatVal : undefined);
+    onRecordPayment(subIdNum, payForm.walletId, totalVal, payForm.date, payForm.nextRenewalDate, vatVal > 0 ? vatVal : undefined);
     setPayForm({ ...payForm, subscriptionId: '', walletId: '', amount: '', nextRenewalDate: '', isTaxable: false, vatAmount: '' });
     setViewMode('HISTORY');
   };
 
-  const onSelectSubscriptionForPayment = (subId: string) => {
+  const onSelectSubscriptionForPayment = (subIdInput: string | number) => {
+    const subId = typeof subIdInput === 'string' ? parseInt(subIdInput) : subIdInput;
     const sub = state.subscriptions.find(s => s.id === subId);
     if (sub) {
       // Auto-calculate next renewal based on cycle
@@ -366,7 +373,7 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
   // --- Refund Submit ---
   const handleRefundSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onRecordRefund(refundForm.subscriptionId, refundForm.walletId, parseFloat(refundForm.amount), refundForm.date);
+    onRecordRefund(parseInt(refundForm.subscriptionId), refundForm.walletId, parseFloat(refundForm.amount), refundForm.date);
     setRefundForm({ subscriptionId: '', walletId: '', amount: '', date: new Date().toISOString().split('T')[0] });
     setViewMode('HISTORY');
   };
@@ -377,7 +384,7 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
     return w ? w.name : 'Unknown Wallet';
   };
 
-  const getSubscriptionName = (id?: string) => {
+  const getSubscriptionName = (id?: number) => {
     const s = state.subscriptions.find(s => s.id === id);
     return s ? s.name : 'Unknown Service';
   };
@@ -1062,7 +1069,7 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
                         <td className="px-6 py-4 text-gray-500">
                           {isEditing ? (
                             <input type="date" value={editTxData.date} onChange={e => setEditTxData({ ...editTxData, date: e.target.value })} className="border rounded px-2 py-1 text-xs" />
-                          ) : new Date(t.date).toLocaleDateString()}
+                          ) : new Date(t.date).toLocaleDateString('en-GB')}
                         </td>
                         <td className="px-6 py-4">
                           {isRefund ? (
@@ -1213,11 +1220,11 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
                               })}
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-gray-500">{sub.lastPaymentDate ? new Date(sub.lastPaymentDate).toLocaleDateString() : '-'}</td>
+                          <td className="px-6 py-4 text-gray-500">{sub.lastPaymentDate ? new Date(sub.lastPaymentDate).toLocaleDateString('en-GB') : '-'}</td>
                           <td className="px-6 py-4">
                             <div className={`flex items-center gap-2 ${isUrgent ? 'text-orange-600 font-bold' : isOverdue ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
                               {(isUrgent || isOverdue) && sub.status === EntityStatus.ACTIVE && <AlertTriangle size={14} />}
-                              {new Date(sub.nextRenewalDate).toLocaleDateString()}
+                              {new Date(sub.nextRenewalDate).toLocaleDateString('en-GB')}
                             </div>
                             {isUrgent && sub.status === EntityStatus.ACTIVE && <span className="text-xs text-orange-500">Due soon</span>}
                           </td>

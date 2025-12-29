@@ -55,7 +55,7 @@ export enum BillingCycle {
 }
 
 export interface Subscription {
-  id: string;
+  id: number;
   name: string;
   baseAmount: number; // Cost in SAR
   billingCycle: BillingCycle;
@@ -93,7 +93,7 @@ export interface Transaction {
   fromWalletId?: string;
   toWalletId?: string;
   description: string;
-  subscriptionId?: string;
+  subscriptionId?: number;
   vatAmount?: number; // Tax amount if applicable
 }
 

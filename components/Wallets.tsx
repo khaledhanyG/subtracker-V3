@@ -529,7 +529,7 @@ export const Wallets: React.FC<WalletsProps> = ({ state, onAddWallet, onUpdateWa
                         <td className="px-6 py-4 text-gray-500">
                           {isEditing ? (
                             <input type="date" value={editTxData.date} onChange={e => setEditTxData({ ...editTxData, date: e.target.value })} className="border rounded px-2 py-1 text-xs" />
-                          ) : new Date(t.date).toLocaleDateString()}
+                          ) : new Date(t.date).toLocaleDateString('en-GB')}
                         </td>
 
                         {/* Type */}
