@@ -267,7 +267,7 @@ export const Wallets: React.FC<WalletsProps> = ({ state, onAddWallet, onUpdateWa
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-slate-400 font-medium mb-1">Main Company Wallet</h2>
-            <div className="text-4xl font-bold mb-4">{mainWallet?.balance.toLocaleString()} SAR</div>
+            <div className="text-4xl font-bold mb-4">{mainWallet?.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR</div>
             <p className="text-slate-400 text-sm">Source of funds for all employee cards.</p>
           </div>
           <button
@@ -438,7 +438,7 @@ export const Wallets: React.FC<WalletsProps> = ({ state, onAddWallet, onUpdateWa
             </div>
             <div>
               <div className="text-xs text-gray-400 uppercase font-semibold">Current Balance</div>
-              <div className={`text-2xl font-bold ${wallet.status === EntityStatus.INACTIVE ? 'text-gray-400' : 'text-indigo-600'}`}>{wallet.balance.toLocaleString()} SAR</div>
+              <div className={`text-2xl font-bold ${wallet.status === EntityStatus.INACTIVE ? 'text-gray-400' : 'text-indigo-600'}`}>{wallet.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR</div>
             </div>
           </div>
         ))}
