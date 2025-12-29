@@ -45,7 +45,7 @@ const recalculateBalances = async () => {
             // Round to 2 decimals to avoid float errors
             calculatedBalance = Math.round(calculatedBalance * 100) / 100;
 
-            if (parseFloat(wallet.balance) !== calculatedBalance) {
+            if (Math.abs(parseFloat(wallet.balance) - calculatedBalance) > 0.009) {
                 console.log(`Updating Wallet ${wallet.name} (${walletId}): Old Balance=${wallet.balance}, New Balance=${calculatedBalance}`);
                 await client.query('UPDATE wallets SET balance = $1 WHERE id = $2', [calculatedBalance, walletId]);
             } else {
