@@ -1015,7 +1015,7 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
                 <select
                   className="text-xs border rounded px-2 py-1 max-w-[150px]"
                   value={filterServiceId}
-                  onChange={e => setFilterServiceId(e.target.value)}
+                  onChange={e => setFilterServiceId(e.target.value ? parseInt(e.target.value) : '')}
                 >
                   <option value="">All Services</option>
                   {state.subscriptions.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}

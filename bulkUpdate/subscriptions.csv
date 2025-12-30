@@ -1,2 +1,0 @@
-id,user_id,name,base_amount,billing_cycle,user_count,notes,status,allocation_type,departments,account_allocation_type,accounts,start_date,next_renewal_date,last_payment_date,last_payment_amount,created_at
-1,5e189da8-2f10-43a6-bb19-be0b05f098ba,1Password,270,MONTHLY,1,,ACTIVE,SINGLE,"[{""departmentId"":""91db356b-7c92-454e-9c28-51b63a070568""}]",SINGLE,"[{""accountId"":""2872a0b5-8c0b-444c-b0d4-f79177a7b065""}]",01-01-25,04-06-25,,,2025-12-29 07:37:27.044601+00
