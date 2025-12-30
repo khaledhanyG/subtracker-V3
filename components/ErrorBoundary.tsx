@@ -32,7 +32,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <pre className="bg-white p-4 rounded border border-red-200 overflow-auto max-w-2xl text-sm">
             {this.state.error?.toString()}
           </pre>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="mt-6 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
@@ -42,6 +42,6 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    return (this as any).props.children;
   }
 }

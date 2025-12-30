@@ -20,11 +20,11 @@ export const verifyToken = (token: string): UserPayload | null => {
   }
 };
 
-export const authenticated = (handler: (req: VercelRequest, res: VercelResponse, user: UserPayload) => Promise<void>) => {
+export const authenticated = (handler: (req: VercelRequest, res: VercelResponse, user: UserPayload) => Promise<void | VercelResponse | any>) => {
   return async (req: VercelRequest, res: VercelResponse) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-       return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const token = authHeader.split(' ')[1];

@@ -11,8 +11,9 @@ const migrateSubsToNumeric = async () => {
         ssl: { rejectUnauthorized: false }
     });
 
+    let client;
     try {
-        const client = await pool.connect();
+        client = await pool.connect();
 
         console.log("Starting Subscription ID Migration to Numeric...");
         await client.query('BEGIN');
@@ -70,7 +71,7 @@ const migrateSubsToNumeric = async () => {
 
     } catch (e) {
         console.error("Migration Failed:", e);
-        await client.query('ROLLBACK'); // Safety rollback
+        if (client) await client.query('ROLLBACK'); // Safety rollback
         // Note: client might be disconnected if error is severe, but try anyway
     } finally {
         await pool.end();
