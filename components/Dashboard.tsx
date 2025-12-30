@@ -105,10 +105,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
 
   const subGroups = getSubscriptionGroups();
 
+  // Date Filtering State
+  const [startDate, setStartDate] = React.useState<string>('');
+  const [endDate, setEndDate] = React.useState<string>('');
+
+  // Filter Transactions based on Date Range
+  const filteredTransactions = React.useMemo(() => {
+    return state.transactions.filter(t => {
+      if (!startDate && !endDate) return true;
+      const txDate = new Date(t.date);
+      if (startDate && txDate < new Date(startDate)) return false;
+      if (endDate && new Date(endDate).setHours(23, 59, 59, 999) < txDate.getTime()) return false;
+      return true;
+    });
+  }, [state.transactions, startDate, endDate]);
+
   // Calculate Total Paid Per Department (Real Transaction History)
   const deptTotalPaidMap = new Map<string, number>();
 
-  state.transactions.forEach(t => {
+  filteredTransactions.forEach(t => {
     if ((t.type === TransactionType.SUBSCRIPTION_PAYMENT || t.type === TransactionType.REFUND) && t.subscriptionId) {
       const sub = state.subscriptions.find(s => s.id === t.subscriptionId);
       if (!sub) return;
@@ -136,8 +151,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
   });
 
   const getSubTotalPaid = (subId: number) => {
-    const payments = state.transactions.filter(t => t.subscriptionId === subId && t.type === TransactionType.SUBSCRIPTION_PAYMENT).reduce((sum, t) => sum + t.amount, 0);
-    const refunds = state.transactions.filter(t => t.subscriptionId === subId && t.type === TransactionType.REFUND).reduce((sum, t) => sum + t.amount, 0);
+    const payments = filteredTransactions.filter(t => t.subscriptionId === subId && t.type === TransactionType.SUBSCRIPTION_PAYMENT).reduce((sum, t) => sum + t.amount, 0);
+    const refunds = filteredTransactions.filter(t => t.subscriptionId === subId && t.type === TransactionType.REFUND).reduce((sum, t) => sum + t.amount, 0);
     return payments - refunds;
   };
 
@@ -245,6 +260,36 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
         </div>
       </div>
 
+      {/* Date Filters */}
+      <div className="flex flex-wrap gap-4 items-end bg-white p-4 rounded-xl border border-gray-200 shadow-sm no-print">
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 mb-1">Start Date</label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 mb-1">End Date</label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="text-xs text-gray-400 pb-2">
+          * Filters "Total Paid" calculations below.
+        </div>
+        {(startDate || endDate) && (
+          <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-xs text-red-500 hover:text-red-700 pb-2 underline">
+            Clear Filter
+          </button>
+        )}
+      </div>
+
       {/* Departmental Subscription Board */}
       <div className="print-section overflow-x-auto pb-4">
         <div className="min-w-max">
@@ -273,9 +318,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
                       <h4 className="font-bold text-gray-800">{dept.name}</h4>
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{subGroups[dept.id]?.length || 0}</span>
                     </div>
-                    <div className="text-right">
-                      <div className="text-[10px] text-gray-400 uppercase font-semibold">Total Paid</div>
-                      <div className="text-sm font-bold text-gray-700">{deptTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR</div>
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                      <span className="text-[10px] text-gray-400 uppercase font-semibold">Total Expense</span>
+                      <span className="text-sm font-bold text-gray-700">{deptTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR</span>
                     </div>
                   </div>
                   {/* Cards */}
@@ -287,7 +332,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
                     )}
                   </div>
                 </div>
-              ))}
+              );
+            })}
 
             {/* Shared Column */}
             <div className="w-80 flex-shrink-0 bg-gray-50 rounded-xl border border-gray-200 flex flex-col max-h-[600px]">
