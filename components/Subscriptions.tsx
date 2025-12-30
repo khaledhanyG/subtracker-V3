@@ -31,7 +31,7 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
   // --- History Filters & Accounting ---
   const [filterDateStart, setFilterDateStart] = useState('');
   const [filterDateEnd, setFilterDateEnd] = useState('');
-  const [filterServiceId, setFilterServiceId] = useState<number | ''>('');
+  const [filterServiceSearch, setFilterServiceSearch] = useState('');
   const [showAccountingModal, setShowAccountingModal] = useState(false);
 
   // --- Edit History State ---
@@ -405,8 +405,11 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
     paymentHistory = paymentHistory.filter(t => t.date.split('T')[0] <= filterDateEnd);
   }
   // Apply Service Filter
-  if (filterServiceId) {
-    paymentHistory = paymentHistory.filter(t => t.subscriptionId === filterServiceId);
+  if (filterServiceSearch) {
+    paymentHistory = paymentHistory.filter(t => {
+      const sub = state.subscriptions.find(s => s.id === t.subscriptionId);
+      return sub && sub.name.toLowerCase().includes(filterServiceSearch.toLowerCase());
+    });
   }
 
   // Calculate Total Sum of filtered history
@@ -1012,23 +1015,26 @@ export const Subscriptions: React.FC<SubscriptionsProps> = ({ state, onAddSubscr
                 />
 
                 <span className="text-xs text-gray-500 ml-2">Service:</span>
-                <select
+                <input
+                  list="service-options"
+                  type="text"
                   className="text-xs border rounded px-2 py-1 max-w-[150px]"
-                  value={filterServiceId}
-                  onChange={e => setFilterServiceId(e.target.value ? parseInt(e.target.value) : '')}
-                >
-                  <option value="">All Services</option>
-                  {state.subscriptions.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+                  placeholder="Search Service..."
+                  value={filterServiceSearch}
+                  onChange={e => setFilterServiceSearch(e.target.value)}
+                />
+                <datalist id="service-options">
+                  {state.subscriptions.map(s => <option key={s.id} value={s.name} />)}
+                </datalist>
 
-                {(filterDateStart || filterDateEnd || filterServiceId) && (
-                  <button onClick={() => { setFilterDateStart(''); setFilterDateEnd(''); setFilterServiceId(''); }} className="text-xs text-red-500 underline">Clear</button>
+                {(filterDateStart || filterDateEnd || filterServiceSearch) && (
+                  <button onClick={() => { setFilterDateStart(''); setFilterDateEnd(''); setFilterServiceSearch(''); }} className="text-xs text-red-500 underline">Clear</button>
                 )}
               </div>
             </div>
 
             {/* Total Summary Box for filtered view */}
-            {(filterDateStart || filterDateEnd || filterServiceId) && (
+            {(filterDateStart || filterDateEnd || filterServiceSearch) && (
               <div className="bg-blue-50 border border-blue-200 rounded px-4 py-2 text-blue-800 text-sm font-medium">
                 Filtered Total: {netFilteredTotal.toLocaleString()} SAR
               </div>
