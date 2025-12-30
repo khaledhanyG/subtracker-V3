@@ -28,7 +28,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ state }) => {
   const upcomingRenewals = state.subscriptions.filter(sub => {
     const today = new Date();
     const endDate = new Date(sub.nextRenewalDate);
-    const diffTime = endDate.getTime() - today.getTime();
+    // Force Re-deploy (Clear Vercel Cache)
+    const isPrint = useMediaQuery('print'); - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays >= 0 && diffDays <= 14;
   });
