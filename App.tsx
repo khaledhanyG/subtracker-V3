@@ -252,8 +252,14 @@ function AppContent() {
     try { await api.post('/accounts', { name, code }); loadData(); } catch (e) { alert('Error'); }
   };
 
-  const updateAccount = (id: string, updates: Partial<Account>) => {
-    console.log("Update Account not implemented");
+  const updateAccount = async (id: string, updates: Partial<Account>) => {
+    try {
+      await api.put('/accounts', { id, ...updates });
+      loadData();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to update account');
+    }
   };
 
   const deleteAccount = async (id: string) => {
