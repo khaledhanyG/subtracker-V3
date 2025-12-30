@@ -49,14 +49,21 @@ const bulkUpdateTransactions = async () => {
 
             // Fix Date Format: YY-MM-DD HH:mm:ss -> YYYY-MM-DD HH:mm:ss
             let validDate = dateStr;
-            // Check if matches YY-MM-DD (e.g., 25-07-13)
-            const yyMmDd = /^(\d{2})-(\d{2})-(\d{2})\s/;
-            const match = dateStr.match(yyMmDd);
-            if (match) {
-                // If it starts with 2 digits, assume it's YY-MM-DD (Year-Month-Day)
-                // because 25 is likely 2025.
-                // match[1] = YY, match[2] = MM, match[3] = DD
-                validDate = `20${match[1]}-${match[2]}-${match[3]} ${dateStr.split(' ')[1] || '00:00:00'}`;
+
+            // Check if matches DD-MM-YY (e.g., 31-01-25) BUT NOT YYYY-MM-DD
+            // If starts with 4 digits, assume standard YYYY-MM-DD and leave alone.
+            if (/^\d{4}-/.test(dateStr)) {
+                validDate = dateStr;
+            }
+            else {
+                const yyMmDd = /^(\d{2})-(\d{2})-(\d{2})\s/;
+                const match = dateStr.match(yyMmDd);
+                if (match) {
+                    // INPUT is DD-MM-YY (e.g. 31-01-25)
+                    // match[1] = DD, match[2] = MM, match[3] = YY
+                    // OUTPUT should be YYYY-MM-DD
+                    validDate = `20${match[3]}-${match[2]}-${match[1]} ${dateStr.split(' ')[1] || '00:00:00'}`;
+                }
             }
 
             const id = parseInt(idStr);
